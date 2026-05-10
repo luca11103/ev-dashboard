@@ -1,46 +1,107 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { 
   Activity, Thermometer, Zap, Waves, AlertTriangle, 
-  Download, Cpu, Gauge, Battery, Server, CheckCircle2, RotateCcw,
-  Sparkles, X, FileText, LineChart as LineChartIcon
+  Cpu, Gauge, Battery, Server, CheckCircle2, RotateCcw,
+  Sparkles, X, FileText, LineChart as LineChartIcon, Database, Trash2
 } from 'lucide-react';
 
 // --- Utility Components ---
-const SVGLineChart = ({ data, dataKey, strokeColor, unit }) => {
-  if (!data || data.length < 2) return <div className="text-slate-500 flex items-center justify-center h-full">Gathering data...</div>;
-  
-  const values = data.map(d => d[dataKey]);
-  const maxVal = Math.max(...values);
-  const minVal = Math.min(...values);
-  const pad = (maxVal - minVal) * 0.2 || 2; // Add 20% padding
-  const maxPlot = maxVal + pad;
-  const minPlot = Math.max(0, minVal - pad); 
-  const range = maxPlot - minPlot;
+const SVGLineChart = ({ data, series, unit, warningAt }) => {
+  const activeSeries = series || [];
+  const points = (data || []).filter((point) =>
+    activeSeries.some((item) => Number.isFinite(Number(point[item.dataKey]))),
+  );
 
-  const pts = values.map((val, i) => {
-    const x = (i / (data.length - 1)) * 100;
-    const y = 100 - ((val - minPlot) / range) * 100;
-    return `${x},${y}`;
-  }).join(' ');
+  if (points.length < 2) {
+    return <div className="text-slate-500 flex items-center justify-center h-full">Waiting for stored samples...</div>;
+  }
+
+  const values = activeSeries.flatMap((item) =>
+    points.map((point) => Number(point[item.dataKey])).filter(Number.isFinite),
+  );
+  const maxVal = Math.max(...values, warningAt ?? -Infinity);
+  const minVal = Math.min(...values, warningAt ?? Infinity);
+  const pad = (maxVal - minVal) * 0.15 || 2;
+  const maxPlot = maxVal + pad;
+  const minPlot = Math.max(0, minVal - pad);
+  const range = maxPlot - minPlot || 1;
+  const chartWidth = Math.max(980, points.length * 16);
+  const chartHeight = 300;
+  const left = 64;
+  const right = 28;
+  const top = 24;
+  const bottom = 44;
+  const plotWidth = chartWidth - left - right;
+  const plotHeight = chartHeight - top - bottom;
+  const yFor = (value) => top + (1 - ((value - minPlot) / range)) * plotHeight;
+  const xFor = (index) => left + (index / (points.length - 1)) * plotWidth;
+  const yTicks = [maxPlot, (maxPlot + minPlot) / 2, minPlot];
+  const xTicks = [0, Math.floor((points.length - 1) / 2), points.length - 1];
+
+  const stats = activeSeries.map((item) => {
+    const itemValues = points.map((point) => Number(point[item.dataKey])).filter(Number.isFinite);
+    const latest = itemValues[itemValues.length - 1];
+    const min = Math.min(...itemValues);
+    const max = Math.max(...itemValues);
+    const avg = itemValues.reduce((sum, value) => sum + value, 0) / itemValues.length;
+    return { ...item, latest, min, max, avg };
+  });
 
   return (
-    <div className="relative w-full h-full flex flex-col font-mono">
-       <div className="flex-1 border-l border-b border-slate-700 mt-2 ml-10 mb-6 relative">
-          <svg className="absolute inset-0 w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 100">
-            <line x1="0" y1="25" x2="100" y2="25" stroke="#334155" strokeDasharray="4" strokeWidth="0.5"/>
-            <line x1="0" y1="50" x2="100" y2="50" stroke="#334155" strokeDasharray="4" strokeWidth="0.5"/>
-            <line x1="0" y1="75" x2="100" y2="75" stroke="#334155" strokeDasharray="4" strokeWidth="0.5"/>
-            <polyline points={pts} fill="none" stroke={strokeColor} strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <div className="absolute -left-2 top-0 text-[10px] text-slate-400 -translate-x-full -translate-y-1/2">{maxPlot.toFixed(1)} {unit}</div>
-          <div className="absolute -left-2 top-1/2 text-[10px] text-slate-400 -translate-x-full -translate-y-1/2">{((maxPlot+minPlot)/2).toFixed(1)} {unit}</div>
-          <div className="absolute -left-2 bottom-0 text-[10px] text-slate-400 -translate-x-full translate-y-1/2">{minPlot.toFixed(1)} {unit}</div>
-       </div>
-       <div className="flex justify-between px-10 text-[10px] text-slate-500">
-         <span>{data[0].time}</span>
-         <span>{data[Math.floor(data.length/2)].time}</span>
-         <span>{data[data.length-1].time}</span>
-       </div>
+    <div className="h-full flex flex-col gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {stats.map((item) => (
+          <div key={item.dataKey} className="rounded-lg bg-slate-950/70 border border-slate-800 p-3">
+            <div className="flex items-center gap-2 text-xs text-slate-400">
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+              {item.label}
+            </div>
+            <div className="mt-2 text-xl font-mono text-white">{item.latest.toFixed(1)} <span className="text-xs text-slate-500">{unit}</span></div>
+            <div className="mt-1 text-[11px] text-slate-500 font-mono">min {item.min.toFixed(1)} / avg {item.avg.toFixed(1)} / max {item.max.toFixed(1)}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden rounded-lg border border-slate-800 bg-slate-950/70">
+        <svg width={chartWidth} height={chartHeight} className="block font-mono">
+          <rect x="0" y="0" width={chartWidth} height={chartHeight} fill="#020617" />
+          {yTicks.map((tick) => (
+            <g key={tick}>
+              <line x1={left} x2={chartWidth - right} y1={yFor(tick)} y2={yFor(tick)} stroke="#1e293b" strokeDasharray="5 5" />
+              <text x={left - 10} y={yFor(tick) + 4} textAnchor="end" fill="#94a3b8" fontSize="11">{tick.toFixed(1)}</text>
+            </g>
+          ))}
+          {warningAt !== undefined && (
+            <g>
+              <line x1={left} x2={chartWidth - right} y1={yFor(warningAt)} y2={yFor(warningAt)} stroke="#fb7185" strokeDasharray="8 5" />
+              <text x={chartWidth - right - 8} y={yFor(warningAt) - 6} textAnchor="end" fill="#fb7185" fontSize="11">limit {warningAt} {unit}</text>
+            </g>
+          )}
+          <line x1={left} x2={left} y1={top} y2={chartHeight - bottom} stroke="#475569" />
+          <line x1={left} x2={chartWidth - right} y1={chartHeight - bottom} y2={chartHeight - bottom} stroke="#475569" />
+
+          {activeSeries.map((item) => {
+            const path = points.map((point, index) => `${xFor(index)},${yFor(Number(point[item.dataKey]))}`).join(' ');
+            return (
+              <polyline
+                key={item.dataKey}
+                points={path}
+                fill="none"
+                stroke={item.color}
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            );
+          })}
+
+          {xTicks.map((index) => (
+            <text key={index} x={xFor(index)} y={chartHeight - 16} textAnchor={index === 0 ? 'start' : index === points.length - 1 ? 'end' : 'middle'} fill="#64748b" fontSize="11">
+              {points[index]?.time}
+            </text>
+          ))}
+        </svg>
+      </div>
     </div>
   );
 };
@@ -94,24 +155,94 @@ const ProgressBar = ({ value, max, colorClass, label, unit }) => {
   );
 };
 
+const TELEMETRY_API_URL = import.meta.env.VITE_TELEMETRY_API_URL || '/api/telemetry';
+const TELEMETRY_POLL_MS = Number(import.meta.env.VITE_TELEMETRY_POLL_MS || 750);
+const STALE_AFTER_MS = Number(import.meta.env.VITE_TELEMETRY_STALE_AFTER_MS || 5000);
+const HISTORY_STORAGE_KEY = 'ev-dashboard-telemetry-history-v1';
+const MAX_HISTORY_POINTS = Number(import.meta.env.VITE_MAX_HISTORY_POINTS || 5000);
+
+const readNumber = (...values) => {
+  for (const value of values) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return undefined;
+};
+
+const withMotorDefaults = (incoming = {}, current = {}) => ({
+  rpm: readNumber(incoming.rpm, incoming.speedRpm, incoming.speed, current.rpm) ?? 0,
+  temp: readNumber(incoming.temp, incoming.temperature, incoming.motorTemp, current.temp) ?? 0,
+  inputVoltage: readNumber(incoming.inputVoltage, incoming.voltage, incoming.busVoltage, current.inputVoltage) ?? 0,
+  currentDraw: readNumber(incoming.currentDraw, incoming.current, incoming.totalCurrent, current.currentDraw) ?? 0,
+  phaseU: readNumber(incoming.phaseU, incoming.u, incoming.phaseCurrentU, current.phaseU) ?? 0,
+  phaseV: readNumber(incoming.phaseV, incoming.v, incoming.phaseCurrentV, current.phaseV) ?? 0,
+  phaseW: readNumber(incoming.phaseW, incoming.w, incoming.phaseCurrentW, current.phaseW) ?? 0,
+  vibrationX: readNumber(incoming.vibrationX, incoming.vibration?.x, incoming.imu?.x, current.vibrationX) ?? 0,
+  vibrationY: readNumber(incoming.vibrationY, incoming.vibration?.y, incoming.imu?.y, current.vibrationY) ?? 0,
+  vibrationZ: readNumber(incoming.vibrationZ, incoming.vibration?.z, incoming.imu?.z, current.vibrationZ) ?? 0,
+  backEmf: readNumber(incoming.backEmf, incoming.bemf, current.backEmf) ?? 0,
+  health: readNumber(incoming.health, current.health) ?? 100,
+});
+
+const buildHistoryPoint = (front, rear) => ({
+  timestamp: Date.now(),
+  time: new Date().toLocaleTimeString([], { hour12: false }),
+  frontTemp: front.temp,
+  frontCurrent: front.currentDraw,
+  frontRpm: front.rpm,
+  frontInputVoltage: front.inputVoltage,
+  frontBackEmf: front.backEmf,
+  frontPhaseU: front.phaseU,
+  frontPhaseV: front.phaseV,
+  frontPhaseW: front.phaseW,
+  frontVibrationX: front.vibrationX,
+  frontVibrationY: front.vibrationY,
+  frontVibrationZ: front.vibrationZ,
+  rearTemp: rear.temp,
+  rearCurrent: rear.currentDraw,
+  rearRpm: rear.rpm,
+  rearInputVoltage: rear.inputVoltage,
+  rearBackEmf: rear.backEmf,
+  rearPhaseU: rear.phaseU,
+  rearPhaseV: rear.phaseV,
+  rearPhaseW: rear.phaseW,
+  rearVibrationX: rear.vibrationX,
+  rearVibrationY: rear.vibrationY,
+  rearVibrationZ: rear.vibrationZ,
+});
+
+const loadStoredHistory = () => {
+  try {
+    const rawHistory = window.localStorage.getItem(HISTORY_STORAGE_KEY);
+    if (!rawHistory) return [];
+    const parsed = JSON.parse(rawHistory);
+    return Array.isArray(parsed) ? parsed.slice(-MAX_HISTORY_POINTS) : [];
+  } catch {
+    return [];
+  }
+};
+
 // --- Main Application ---
 export default function App() {
-  const [isConnected, setIsConnected] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
+  const [hasTelemetry, setHasTelemetry] = useState(false);
+  const [streamMode, setStreamMode] = useState('Waiting for Pico');
+  const [lastPacketAt, setLastPacketAt] = useState(null);
   const [mlStatus, setMlStatus] = useState("Adaptive AWD Active");
   const [torqueSplit, setTorqueSplit] = useState({ front: 50, rear: 50 });
   
   const [frontMotor, setFrontMotor] = useState({
-    rpm: 0, temp: 45, inputVoltage: 72, currentDraw: 0,
+    rpm: 0, temp: 0, inputVoltage: 0, currentDraw: 0,
     phaseU: 0, phaseV: 0, phaseW: 0,
     vibrationX: 0.1, vibrationY: 0.1, vibrationZ: 0.1,
-    backEmf: 0, health: 100
+    backEmf: 0, health: 0
   });
 
   const [rearMotor, setRearMotor] = useState({
-    rpm: 0, temp: 48, inputVoltage: 72, currentDraw: 0,
+    rpm: 0, temp: 0, inputVoltage: 0, currentDraw: 0,
     phaseU: 0, phaseV: 0, phaseW: 0,
     vibrationX: 0.1, vibrationY: 0.2, vibrationZ: 0.1,
-    backEmf: 0, health: 98
+    backEmf: 0, health: 0
   });
 
   const [alerts, setAlerts] = useState([
@@ -123,101 +254,113 @@ export default function App() {
   const [aiAnalysisState, setAiAnalysisState] = useState({ loading: false, alertId: null, content: null });
 
   // History state for graphs
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState(loadStoredHistory);
   const [graphModal, setGraphModal] = useState(null); 
   
-  const latestData = useRef({
-    frontTemp: 45, frontCurrent: 0, frontRpm: 0, frontInputVoltage: 72, frontBackEmf: 0, frontPhaseU: 0, frontPhaseV: 0, frontPhaseW: 0, frontVibrationX: 0, frontVibrationY: 0, frontVibrationZ: 0,
-    rearTemp: 48, rearCurrent: 0, rearRpm: 0, rearInputVoltage: 72, rearBackEmf: 0, rearPhaseU: 0, rearPhaseV: 0, rearPhaseW: 0, rearVibrationX: 0, rearVibrationY: 0, rearVibrationZ: 0
-  });
+  const frontMotorRef = useRef(frontMotor);
+  const rearMotorRef = useRef(rearMotor);
+  const lastPayloadSignature = useRef('');
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      const baseRpm = 3500 + Math.random() * 500;
-      const baseCurrent = 40 + Math.random() * 15;
-      
-      setFrontMotor(prev => {
-        const next = {
-          ...prev,
-          rpm: baseRpm + (Math.random() * 100 - 50),
-          temp: Math.min(120, prev.temp + (Math.random() * 0.4 - 0.1)),
-          currentDraw: baseCurrent,
-          phaseU: baseCurrent * 0.33 + Math.random() * 2,
-          phaseV: baseCurrent * 0.33 + Math.random() * 2,
-          phaseW: baseCurrent * 0.33 + Math.random() * 2,
-          vibrationX: Math.abs(Math.sin(Date.now() / 1000) * 1.5) + 0.5,
-          vibrationY: Math.abs(Math.cos(Date.now() / 1200) * 1.0) + 0.5,
-          vibrationZ: Math.abs(Math.sin(Date.now() / 900) * 0.8) + 0.5,
-          backEmf: (baseRpm * 0.015) + Math.random() * 2
-        };
-        latestData.current.frontTemp = next.temp;
-        latestData.current.frontCurrent = next.currentDraw;
-        latestData.current.frontRpm = next.rpm;
-        latestData.current.frontInputVoltage = next.inputVoltage;
-        latestData.current.frontBackEmf = next.backEmf;
-        latestData.current.frontPhaseU = next.phaseU;
-        latestData.current.frontPhaseV = next.phaseV;
-        latestData.current.frontPhaseW = next.phaseW;
-        latestData.current.frontVibrationX = next.vibrationX;
-        latestData.current.frontVibrationY = next.vibrationY;
-        latestData.current.frontVibrationZ = next.vibrationZ;
-        return next;
-      });
+    try {
+      window.localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history.slice(-MAX_HISTORY_POINTS)));
+    } catch {
+      // Browser storage can be full or disabled; live telemetry should continue either way.
+    }
+  }, [history]);
 
-      setRearMotor(prev => {
-        const next = {
-          ...prev,
-          rpm: baseRpm + (Math.random() * 120 - 60),
-          temp: Math.min(120, prev.temp + (Math.random() * 0.5 - 0.1)),
-          currentDraw: baseCurrent * 1.2,
-          phaseU: (baseCurrent * 1.2) * 0.33 + Math.random() * 2,
-          phaseV: (baseCurrent * 1.2) * 0.33 + Math.random() * 2,
-          phaseW: (baseCurrent * 1.2) * 0.33 + Math.random() * 2,
-          vibrationX: Math.abs(Math.cos(Date.now() / 800) * 2.0) + 0.5,
-          vibrationY: Math.abs(Math.sin(Date.now() / 1000) * 1.5) + 0.5,
-          vibrationZ: Math.abs(Math.cos(Date.now() / 1100) * 1.0) + 0.5,
-          backEmf: (baseRpm * 0.015) + Math.random() * 2
-        };
-        latestData.current.rearTemp = next.temp;
-        latestData.current.rearCurrent = next.currentDraw;
-        latestData.current.rearRpm = next.rpm;
-        latestData.current.rearInputVoltage = next.inputVoltage;
-        latestData.current.rearBackEmf = next.backEmf;
-        latestData.current.rearPhaseU = next.phaseU;
-        latestData.current.rearPhaseV = next.phaseV;
-        latestData.current.rearPhaseW = next.phaseW;
-        latestData.current.rearVibrationX = next.vibrationX;
-        latestData.current.rearVibrationY = next.vibrationY;
-        latestData.current.rearVibrationZ = next.vibrationZ;
-        return next;
-      });
+  useEffect(() => {
+    frontMotorRef.current = frontMotor;
+  }, [frontMotor]);
 
-      const split = 40 + Math.random() * 20;
-      setTorqueSplit({ front: split, rear: 100 - split });
+  useEffect(() => {
+    rearMotorRef.current = rearMotor;
+  }, [rearMotor]);
 
-      setHistory(prev => [...prev, {
-        time: new Date().toLocaleTimeString([], { hour12: false }),
-        ...latestData.current
-      }].slice(-60));
+  useEffect(() => {
+    const applyTelemetry = (payload, updatedAt) => {
+      const data = payload?.data || payload;
+      if (!data) return false;
 
-    }, 800);
+      const nextFront = withMotorDefaults(data.front || data.frontMotor, frontMotorRef.current);
+      const nextRear = withMotorDefaults(data.rear || data.rearMotor, rearMotorRef.current);
+      const signature = JSON.stringify({ updatedAt, nextFront, nextRear, torqueSplit: data.torqueSplit });
 
+      if (signature === lastPayloadSignature.current) return true;
+      lastPayloadSignature.current = signature;
+
+      setFrontMotor(nextFront);
+      setRearMotor(nextRear);
+
+      if (data.torqueSplit) {
+        const front = readNumber(data.torqueSplit.front, data.frontTorque, data.torqueFront);
+        const rear = readNumber(data.torqueSplit.rear, data.rearTorque, data.torqueRear);
+        if (front !== undefined && rear !== undefined) setTorqueSplit({ front, rear });
+      }
+
+      if (data.mlStatus || data.controllerMode) {
+        setMlStatus(data.mlStatus || data.controllerMode);
+      }
+
+      setHistory(prev => [...prev, buildHistoryPoint(nextFront, nextRear)].slice(-MAX_HISTORY_POINTS));
+      setLastPacketAt(updatedAt || data.receivedAt || data.timestamp || new Date().toISOString());
+      setHasTelemetry(true);
+      setIsConnected(true);
+      setStreamMode('Pico live');
+      return true;
+    };
+
+    const pollTelemetry = async () => {
+      try {
+        const response = await fetch(`${TELEMETRY_API_URL}?t=${Date.now()}`, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`Telemetry API returned ${response.status}`);
+        const payload = await response.json();
+
+        if (!payload.data) {
+          setIsConnected(false);
+          setHasTelemetry(false);
+          setLastPacketAt(null);
+          setStreamMode('Waiting for Pico');
+          return;
+        }
+
+        const updatedTime = payload.updatedAt ? new Date(payload.updatedAt).getTime() : Date.now();
+        if (Date.now() - updatedTime > STALE_AFTER_MS) {
+          setIsConnected(false);
+          setHasTelemetry(false);
+          setStreamMode('Pico stale');
+          return;
+        }
+
+        applyTelemetry(payload.data, payload.updatedAt);
+      } catch {
+        setIsConnected(false);
+        setHasTelemetry(false);
+        setStreamMode('API unavailable');
+      }
+    };
+
+    pollTelemetry();
+    const interval = setInterval(pollTelemetry, TELEMETRY_POLL_MS);
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    if (rearMotor.temp > 85 && alerts.length < 5) {
-      addAlert('warning', 'Rear motor temperature exceeding optimal bounds (85°C+)');
-    }
-    if (frontMotor.vibrationX > 3.0) {
-      addAlert('critical', 'High vibration anomaly detected on Front Drive IMU');
-    }
-  }, [frontMotor.temp, rearMotor.temp, frontMotor.vibrationX]);
-
-  const addAlert = (type, msg) => {
+  const addAlert = useCallback((type, msg) => {
     const newAlert = { id: Date.now(), time: new Date().toLocaleTimeString(), type, msg };
     setAlerts(prev => [newAlert, ...prev].slice(0, 8));
-  };
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (rearMotor.temp > 85 && alerts.length < 5) {
+        addAlert('warning', 'Rear motor temperature exceeding optimal bounds (85°C+)');
+      }
+      if (frontMotor.vibrationX > 3.0) {
+        addAlert('critical', 'High vibration anomaly detected on Front Drive IMU');
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [addAlert, alerts.length, frontMotor.temp, rearMotor.temp, frontMotor.vibrationX]);
 
   const handleGenerateAiReport = async () => {
     setIsGeneratingReport(true);
@@ -236,7 +379,7 @@ export default function App() {
     try {
       const result = await generateGeminiContent(prompt);
       setAiReportContent(result);
-    } catch (e) {
+    } catch {
       setAiReportContent("Failed to generate report due to an API error. Please try again.");
     }
     setIsGeneratingReport(false);
@@ -252,12 +395,44 @@ export default function App() {
     try {
       const result = await generateGeminiContent(prompt);
       setAiAnalysisState({ loading: false, alertId: alert.id, content: result });
-    } catch (e) {
+    } catch {
       setAiAnalysisState({ loading: false, alertId: alert.id, content: "Analysis failed. Please check network connection." });
     }
   };
 
-  const MotorPanel = ({ title, motorId, data }) => {
+  const formatValue = (value, digits = 1, unit = '') => {
+    if (!hasTelemetry) return '--';
+    return `${value.toFixed(digits)}${unit ? ` ${unit}` : ''}`;
+  };
+
+  const formatWhole = (value) => {
+    if (!hasTelemetry) return '--';
+    return value.toFixed(0);
+  };
+
+  const clearStoredHistory = () => {
+    setHistory([]);
+    try {
+      window.localStorage.removeItem(HISTORY_STORAGE_KEY);
+    } catch {
+      // Ignore storage failures; clearing in-memory history is still useful.
+    }
+    setGraphModal(null);
+    addAlert('info', 'Stored telemetry history was reset.');
+  };
+
+  const openTrend = (title, unit, series, warningAt) => {
+    setGraphModal({ title, unit, series, warningAt });
+  };
+
+  const openSingleTrend = (title, dataKey, color, unit, warningAt) => {
+    openTrend(title, unit, [{ label: title, dataKey, color }], warningAt);
+  };
+
+  const historyStart = history[0]?.timestamp ? new Date(history[0].timestamp).toLocaleTimeString() : '--';
+  const historyEnd = history.at(-1)?.timestamp ? new Date(history.at(-1).timestamp).toLocaleTimeString() : '--';
+
+  const renderMotorPanel = (title, motorId, data) => {
     const isWarning = data.temp > 80 || data.vibrationX > 2.5;
     
     return (
@@ -270,36 +445,31 @@ export default function App() {
             <div>
               <h2 className="text-xl font-bold text-white">{title}</h2>
               <div className="flex items-center gap-2 text-xs text-slate-400">
-                <span className="flex items-center gap-1"><Activity className="w-3 h-3"/> Health: {data.health}%</span>
+                <span className="flex items-center gap-1"><Activity className="w-3 h-3"/> Health: {hasTelemetry ? `${data.health}%` : '--'}</span>
               </div>
             </div>
           </div>
           <div 
-            onClick={() => setGraphModal({ title: `${title} RPM`, dataKey: `${motorId}Rpm`, color: '#10b981', unit: 'RPM' })}
+            onClick={() => openSingleTrend(`${title} RPM`, `${motorId}Rpm`, '#10b981', 'RPM')}
             className="text-right cursor-pointer group relative"
           >
             <LineChartIcon className="absolute -left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="text-3xl font-black text-white font-mono tracking-tight group-hover:text-emerald-400 transition-colors">
-              {data.rpm.toFixed(0)} <span className="text-sm font-medium text-slate-500">RPM</span>
+              {formatWhole(data.rpm)} <span className="text-sm font-medium text-slate-500">RPM</span>
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div 
-            onClick={() => setGraphModal({ 
-              title: `${title} Current Draw`, 
-              dataKey: `${motorId}Current`, 
-              color: '#facc15', 
-              unit: 'A' 
-            })}
+            onClick={() => openSingleTrend(`${title} Current Draw`, `${motorId}Current`, '#facc15', 'A', 120)}
             className="bg-slate-950/50 p-4 rounded-lg border border-slate-800/50 cursor-pointer group hover:bg-slate-800/60 hover:border-slate-600 transition-all relative"
           >
             <LineChartIcon className="absolute top-3 right-3 w-4 h-4 text-slate-600 group-hover:text-yellow-400 transition-colors opacity-0 group-hover:opacity-100" />
             <div className="flex items-center gap-2 text-slate-400 text-sm mb-2">
               <Zap className="w-4 h-4 text-yellow-400" /> Total Current
             </div>
-            <div className="text-2xl font-mono text-white">{data.currentDraw.toFixed(1)} <span className="text-sm text-slate-500">A</span></div>
+            <div className="text-2xl font-mono text-white">{formatValue(data.currentDraw)} <span className="text-sm text-slate-500">A</span></div>
             <ProgressBar value={data.currentDraw} max={150} colorClass="bg-yellow-400" label="Load" unit="A" />
           </div>
           
@@ -411,6 +581,7 @@ export default function App() {
             ) : (
               <span className="flex items-center gap-1 text-rose-400"><AlertTriangle className="w-4 h-4"/> OFFLINE</span>
             )}
+            <span className="hidden sm:inline text-slate-500">({streamMode})</span>
           </div>
           <button 
             onClick={handleGenerateAiReport}
@@ -429,8 +600,20 @@ export default function App() {
 
       <main className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <MotorPanel title="Front Drive" motorId="front" data={frontMotor} />
-          <MotorPanel title="Rear Drive" motorId="rear" data={rearMotor} />
+          {hasTelemetry ? (
+            <>
+              {renderMotorPanel("Front Drive", "front", frontMotor)}
+              {renderMotorPanel("Rear Drive", "rear", rearMotor)}
+            </>
+          ) : (
+            <Card className="md:col-span-2 min-h-[520px] flex items-center justify-center text-center">
+              <div>
+                <Server className="w-10 h-10 text-slate-500 mx-auto mb-4" />
+                <h2 className="text-xl font-bold text-white">Waiting for ESP32 telemetry</h2>
+                <p className="text-sm text-slate-400 mt-2">No motor values will be shown until the first packet reaches the API.</p>
+              </div>
+            </Card>
+          )}
         </div>
 
         <div className="lg:col-span-4 space-y-6">
@@ -451,7 +634,9 @@ export default function App() {
             <div>
               <div className="flex justify-between text-sm text-slate-400 mb-2">
                 <span>Torque Vectoring</span>
-                <span className="font-mono">F {torqueSplit.front.toFixed(0)}% / R {torqueSplit.rear.toFixed(0)}%</span>
+                <span className="font-mono">
+                  {hasTelemetry ? `F ${torqueSplit.front.toFixed(0)}% / R ${torqueSplit.rear.toFixed(0)}%` : '--'}
+                </span>
               </div>
               <div className="h-3 w-full bg-slate-800 rounded-full overflow-hidden flex">
                 <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${torqueSplit.front}%` }}></div>
@@ -472,15 +657,105 @@ export default function App() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="text-sm text-slate-400">Total Draw</div>
-                <div className="text-2xl font-mono text-white">{(frontMotor.currentDraw + rearMotor.currentDraw).toFixed(1)} A</div>
+                <div className="text-2xl font-mono text-white">
+                  {hasTelemetry ? `${(frontMotor.currentDraw + rearMotor.currentDraw).toFixed(1)} A` : '--'}
+                </div>
               </div>
               <div className="text-right">
                 <div className="text-sm text-slate-400">Est. Power</div>
                 <div className="text-2xl font-mono text-white">
-                  {(((frontMotor.currentDraw + rearMotor.currentDraw) * 72) / 1000).toFixed(1)} kW
+                  {hasTelemetry ? `${(((frontMotor.currentDraw + rearMotor.currentDraw) * 72) / 1000).toFixed(1)} kW` : '--'}
                 </div>
               </div>
             </div>
+            <div className="pt-4 mt-4 border-t border-slate-800 text-xs text-slate-400 space-y-2">
+              <div className="flex justify-between gap-3">
+                <span>Telemetry API</span>
+                <span className="font-mono text-slate-300 text-right break-all">{TELEMETRY_API_URL}</span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span>Last Packet</span>
+                <span className="font-mono text-slate-300">
+                  {lastPacketAt ? new Date(lastPacketAt).toLocaleTimeString() : 'waiting'}
+                </span>
+              </div>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Database className="w-5 h-5 text-cyan-400" />
+                Trend Recorder
+              </h3>
+              <button
+                onClick={clearStoredHistory}
+                disabled={history.length === 0}
+                className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-rose-950 hover:text-rose-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                title="Reset stored telemetry"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-3 mb-4 text-center">
+              <div className="rounded-lg bg-slate-950/60 border border-slate-800 p-3">
+                <div className="text-[11px] text-slate-500 uppercase">Samples</div>
+                <div className="text-xl font-mono text-white">{history.length}</div>
+              </div>
+              <div className="rounded-lg bg-slate-950/60 border border-slate-800 p-3">
+                <div className="text-[11px] text-slate-500 uppercase">From</div>
+                <div className="text-sm font-mono text-white">{historyStart}</div>
+              </div>
+              <div className="rounded-lg bg-slate-950/60 border border-slate-800 p-3">
+                <div className="text-[11px] text-slate-500 uppercase">To</div>
+                <div className="text-sm font-mono text-white">{historyEnd}</div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => openTrend('Motor Temperature Comparison', 'C', [
+                  { label: 'Front Temp', dataKey: 'frontTemp', color: '#fb923c' },
+                  { label: 'Rear Temp', dataKey: 'rearTemp', color: '#f43f5e' },
+                ], 80)}
+                disabled={history.length < 2}
+                className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-sm text-slate-200 transition-colors"
+              >
+                Temperature
+              </button>
+              <button
+                onClick={() => openTrend('Current Draw Comparison', 'A', [
+                  { label: 'Front Current', dataKey: 'frontCurrent', color: '#fde047' },
+                  { label: 'Rear Current', dataKey: 'rearCurrent', color: '#facc15' },
+                ], 120)}
+                disabled={history.length < 2}
+                className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-sm text-slate-200 transition-colors"
+              >
+                Current
+              </button>
+              <button
+                onClick={() => openTrend('RPM Comparison', 'RPM', [
+                  { label: 'Front RPM', dataKey: 'frontRpm', color: '#34d399' },
+                  { label: 'Rear RPM', dataKey: 'rearRpm', color: '#22c55e' },
+                ])}
+                disabled={history.length < 2}
+                className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-sm text-slate-200 transition-colors"
+              >
+                RPM
+              </button>
+              <button
+                onClick={() => openTrend('Vibration X Comparison', 'g', [
+                  { label: 'Front Vib X', dataKey: 'frontVibrationX', color: '#38bdf8' },
+                  { label: 'Rear Vib X', dataKey: 'rearVibrationX', color: '#818cf8' },
+                ], 2.5)}
+                disabled={history.length < 2}
+                className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-sm text-slate-200 transition-colors"
+              >
+                Vibration
+              </button>
+            </div>
+            <p className="mt-3 text-[11px] text-slate-500">
+              Stored locally in this browser, capped at {MAX_HISTORY_POINTS.toLocaleString()} samples.
+            </p>
           </Card>
 
           <Card className="flex-1 flex flex-col h-[400px]">
@@ -563,26 +838,27 @@ export default function App() {
       {/* Historical Data Graph Modal */}
       {graphModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl max-w-2xl w-full flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl max-w-6xl w-full max-h-[88vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center p-4 border-b border-slate-800 bg-slate-800/50">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <LineChartIcon className="w-5 h-5" style={{ color: graphModal.color }} />
-                {graphModal.title} over Time
+                <LineChartIcon className="w-5 h-5" style={{ color: graphModal.color || graphModal.series?.[0]?.color }} />
+                {graphModal.title}
               </h3>
               <button onClick={() => setGraphModal(null)} className="text-slate-400 hover:text-white transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-6 h-[350px]">
+            <div className="p-5 h-[520px] min-h-0">
               <SVGLineChart 
                 data={history} 
-                dataKey={graphModal.dataKey} 
-                strokeColor={graphModal.color}
+                series={graphModal.series || [{ label: graphModal.title, dataKey: graphModal.dataKey, color: graphModal.color }]}
                 unit={graphModal.unit} 
+                warningAt={graphModal.warningAt}
               />
             </div>
-            <div className="p-4 border-t border-slate-800 bg-slate-950 text-xs text-slate-500 text-center">
-              Real-time local telemetry buffer (last ~45 seconds)
+            <div className="p-4 border-t border-slate-800 bg-slate-950 text-xs text-slate-500 flex flex-col sm:flex-row justify-between gap-2">
+              <span>Stored telemetry: {history.length.toLocaleString()} samples, scroll horizontally to inspect older data.</span>
+              <span>Range: {historyStart} to {historyEnd}</span>
             </div>
           </div>
         </div>
