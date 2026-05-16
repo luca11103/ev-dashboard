@@ -1,0 +1,354 @@
+{
+  "metadata": {
+    "source": "synthetic_demo",
+    "windows": 252,
+    "features": 245,
+    "sample_rate_hz": 400.0,
+    "window_seconds": 2.0,
+    "bandpass_hz": [
+      5.0,
+      180.0
+    ],
+    "fault_classes": [
+      "back_emf_anomaly",
+      "bearing_wear",
+      "misalignment",
+      "normal",
+      "phase_loss",
+      "rotor_imbalance",
+      "winding_short"
+    ],
+    "classifier_validation": {
+      "gaussian_nb": {
+        "accuracy": 0.9714285714285714,
+        "macro_f1": 0.9711399711399712
+      },
+      "knn": {
+        "accuracy": 0.8571428571428571,
+        "macro_f1": 0.8591836734693877
+      },
+      "bagged_trees": {
+        "accuracy": 0.9428571428571428,
+        "macro_f1": 0.9425685425685426
+      }
+    },
+    "classifier_weights": {
+      "gaussian_nb": 0.3673150620058825,
+      "knn": 0.2866617017636927,
+      "bagged_trees": 0.3460232362304248
+    },
+    "regressor_validation": {
+      "ridge_log_rul": {
+        "mae": 806.1621177073936,
+        "rmse": 1983.859642026683,
+        "r2": 0.47862634150568995
+      },
+      "knn_log_rul": {
+        "mae": 843.6092806459486,
+        "rmse": 1976.1107233194728,
+        "r2": 0.48269133861307734
+      },
+      "bagged_tree_log_rul": {
+        "mae": 578.8957754975265,
+        "rmse": 1474.1889576508447,
+        "r2": 0.7121054073616271
+      }
+    },
+    "regressor_weights": {
+      "ridge_log_rul": 0.2986682340913173,
+      "knn_log_rul": 0.28541058237603,
+      "bagged_tree_log_rul": 0.41592118353265256
+    },
+    "note": "Synthetic demo metrics prove the pipeline; final accuracy requires real labeled BLDC data."
+  },
+  "classifier_test": {
+    "test_accuracy": 0.9761904761904762,
+    "test_macro_f1": 0.9760239760239761,
+    "mean_prediction_confidence": 0.8658884377997934,
+    "test_windows": 42
+  },
+  "regressor_test": {
+    "ensemble_log_rul": {
+      "mae": 426.7837833950497,
+      "rmse": 957.1369810148844,
+      "r2": 0.8643397464146795
+    }
+  },
+  "confusion_matrix": [
+    [
+      6,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      6,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      6,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      6,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      5,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      6,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      6
+    ]
+  ],
+  "test_predictions": [
+    {
+      "actual_fault": "winding_short",
+      "predicted_fault": "winding_short",
+      "actual_rul_minutes": 5.0,
+      "predicted_rul_minutes": 15.943474044298046,
+      "confidence": 0.9198934569947625
+    },
+    {
+      "actual_fault": "bearing_wear",
+      "predicted_fault": "bearing_wear",
+      "actual_rul_minutes": 262.5468164985812,
+      "predicted_rul_minutes": 193.92012084422504,
+      "confidence": 0.9961772560199053
+    },
+    {
+      "actual_fault": "bearing_wear",
+      "predicted_fault": "bearing_wear",
+      "actual_rul_minutes": 496.8612392509743,
+      "predicted_rul_minutes": 462.5446350708605,
+      "confidence": 0.935574475236761
+    },
+    {
+      "actual_fault": "rotor_imbalance",
+      "predicted_fault": "rotor_imbalance",
+      "actual_rul_minutes": 354.5962905928998,
+      "predicted_rul_minutes": 445.78418346758366,
+      "confidence": 0.9441113013993156
+    },
+    {
+      "actual_fault": "misalignment",
+      "predicted_fault": "misalignment",
+      "actual_rul_minutes": 767.3704321759959,
+      "predicted_rul_minutes": 465.45228818701145,
+      "confidence": 0.9812925530226451
+    },
+    {
+      "actual_fault": "phase_loss",
+      "predicted_fault": "phase_loss",
+      "actual_rul_minutes": 37.36742225947364,
+      "predicted_rul_minutes": 44.89524424891304,
+      "confidence": 0.9999019247260349
+    },
+    {
+      "actual_fault": "bearing_wear",
+      "predicted_fault": "bearing_wear",
+      "actual_rul_minutes": 426.4139647708518,
+      "predicted_rul_minutes": 278.76319010735546,
+      "confidence": 0.8586638396430276
+    },
+    {
+      "actual_fault": "winding_short",
+      "predicted_fault": "winding_short",
+      "actual_rul_minutes": 120.54621439320718,
+      "predicted_rul_minutes": 264.51823325828707,
+      "confidence": 0.6444242975661543
+    },
+    {
+      "actual_fault": "bearing_wear",
+      "predicted_fault": "bearing_wear",
+      "actual_rul_minutes": 588.9229221534431,
+      "predicted_rul_minutes": 566.2156794960418,
+      "confidence": 0.6872738261860338
+    },
+    {
+      "actual_fault": "rotor_imbalance",
+      "predicted_fault": "rotor_imbalance",
+      "actual_rul_minutes": 275.5093059298343,
+      "predicted_rul_minutes": 442.87336218009045,
+      "confidence": 0.9627127679410418
+    },
+    {
+      "actual_fault": "misalignment",
+      "predicted_fault": "misalignment",
+      "actual_rul_minutes": 63.14427210294394,
+      "predicted_rul_minutes": 26.77017237879932,
+      "confidence": 0.9761648797330547
+    },
+    {
+      "actual_fault": "misalignment",
+      "predicted_fault": "misalignment",
+      "actual_rul_minutes": 81.8774847168605,
+      "predicted_rul_minutes": 99.95227859583935,
+      "confidence": 0.9501657744957319
+    },
+    {
+      "actual_fault": "phase_loss",
+      "predicted_fault": "phase_loss",
+      "actual_rul_minutes": 136.52461702726544,
+      "predicted_rul_minutes": 240.08535155429735,
+      "confidence": 0.7934654108827636
+    },
+    {
+      "actual_fault": "back_emf_anomaly",
+      "predicted_fault": "back_emf_anomaly",
+      "actual_rul_minutes": 5.0,
+      "predicted_rul_minutes": 33.190315574825696,
+      "confidence": 0.9347918236132593
+    },
+    {
+      "actual_fault": "rotor_imbalance",
+      "predicted_fault": "rotor_imbalance",
+      "actual_rul_minutes": 538.5846742591409,
+      "predicted_rul_minutes": 600.9246435078796,
+      "confidence": 0.9998912381136256
+    },
+    {
+      "actual_fault": "misalignment",
+      "predicted_fault": "misalignment",
+      "actual_rul_minutes": 5.0,
+      "predicted_rul_minutes": 41.98009957158779,
+      "confidence": 0.9315209774664892
+    },
+    {
+      "actual_fault": "normal",
+      "predicted_fault": "normal",
+      "actual_rul_minutes": 9703.779218700914,
+      "predicted_rul_minutes": 6608.055274475189,
+      "confidence": 0.5470191588750959
+    },
+    {
+      "actual_fault": "rotor_imbalance",
+      "predicted_fault": "rotor_imbalance",
+      "actual_rul_minutes": 689.3173608997322,
+      "predicted_rul_minutes": 618.1856557461433,
+      "confidence": 0.9850079239062195
+    },
+    {
+      "actual_fault": "winding_short",
+      "predicted_fault": "winding_short",
+      "actual_rul_minutes": 5.0,
+      "predicted_rul_minutes": 13.662237108415436,
+      "confidence": 0.819493545803333
+    },
+    {
+      "actual_fault": "back_emf_anomaly",
+      "predicted_fault": "back_emf_anomaly",
+      "actual_rul_minutes": 89.97588397465661,
+      "predicted_rul_minutes": 66.3906000913752,
+      "confidence": 0.9887493482755448
+    },
+    {
+      "actual_fault": "misalignment",
+      "predicted_fault": "misalignment",
+      "actual_rul_minutes": 448.9595266957901,
+      "predicted_rul_minutes": 494.70556192193874,
+      "confidence": 0.9924363376370124
+    },
+    {
+      "actual_fault": "back_emf_anomaly",
+      "predicted_fault": "back_emf_anomaly",
+      "actual_rul_minutes": 201.91026513072455,
+      "predicted_rul_minutes": 197.10750772127076,
+      "confidence": 0.9372822542174712
+    },
+    {
+      "actual_fault": "winding_short",
+      "predicted_fault": "winding_short",
+      "actual_rul_minutes": 20.077287514804212,
+      "predicted_rul_minutes": 17.229539996321627,
+      "confidence": 0.9961494290689235
+    },
+    {
+      "actual_fault": "normal",
+      "predicted_fault": "normal",
+      "actual_rul_minutes": 6791.582075947358,
+      "predicted_rul_minutes": 4846.469045727623,
+      "confidence": 0.5321556927459097
+    },
+    {
+      "actual_fault": "misalignment",
+      "predicted_fault": "misalignment",
+      "actual_rul_minutes": 250.9584441077228,
+      "predicted_rul_minutes": 313.4910540634922,
+      "confidence": 0.9492428431495634
+    },
+    {
+      "actual_fault": "phase_loss",
+      "predicted_fault": "phase_loss",
+      "actual_rul_minutes": 8.713748550239135,
+      "predicted_rul_minutes": 31.243748412969374,
+      "confidence": 0.9068817790005048
+    },
+    {
+      "actual_fault": "normal",
+      "predicted_fault": "normal",
+      "actual_rul_minutes": 6084.903900180779,
+      "predicted_rul_minutes": 5836.336429774246,
+      "confidence": 0.9161863723834904
+    },
+    {
+      "actual_fault": "rotor_imbalance",
+      "predicted_fault": "rotor_imbalance",
+      "actual_rul_minutes": 547.1629274176512,
+      "predicted_rul_minutes": 541.9510578757059,
+      "confidence": 0.9999050898266615
+    },
+    {
+      "actual_fault": "winding_short",
+      "predicted_fault": "winding_short",
+      "actual_rul_minutes": 132.31421767067962,
+      "predicted_rul_minutes": 706.1549862186322,
+      "confidence": 0.5688026179102916
+    },
+    {
+      "actual_fault": "phase_loss",
+      "predicted_fault": "phase_loss",
+      "actual_rul_minutes": 120.4193762733514,
+      "predicted_rul_minutes": 297.7751779141169,
+      "confidence": 0.755928016060831
+    }
+  ]
+}
