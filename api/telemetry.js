@@ -13,7 +13,7 @@ const json = (response, status, body) => {
   response.setHeader('Content-Type', 'application/json');
   response.setHeader('Access-Control-Allow-Origin', '*');
   response.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  response.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-pico-key');
+  response.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-telemetry-key, x-pico-key');
   response.end(JSON.stringify(body));
 };
 
@@ -74,9 +74,10 @@ export default async function handler(request, response) {
     return json(response, 405, { ok: false, error: 'Method not allowed' });
   }
 
-  const expectedKey = process.env.PICO_API_KEY;
-  if (expectedKey && request.headers['x-pico-key'] !== expectedKey) {
-    return json(response, 401, { ok: false, error: 'Invalid Pico API key' });
+  const expectedKey = process.env.TELEMETRY_API_KEY || process.env.PICO_API_KEY;
+  const submittedKey = request.headers['x-telemetry-key'] || request.headers['x-pico-key'];
+  if (expectedKey && submittedKey !== expectedKey) {
+    return json(response, 401, { ok: false, error: 'Invalid telemetry API key' });
   }
 
   try {

@@ -226,7 +226,7 @@ const loadStoredHistory = () => {
 export default function App() {
   const [isConnected, setIsConnected] = useState(false);
   const [hasTelemetry, setHasTelemetry] = useState(false);
-  const [streamMode, setStreamMode] = useState('Waiting for Pico');
+  const [streamMode, setStreamMode] = useState('Waiting for bridge');
   const [lastPacketAt, setLastPacketAt] = useState(null);
   const [mlStatus, setMlStatus] = useState("Adaptive AWD Active");
   const [torqueSplit, setTorqueSplit] = useState({ front: 50, rear: 50 });
@@ -246,7 +246,7 @@ export default function App() {
   });
 
   const [alerts, setAlerts] = useState([
-    { id: 1, time: new Date().toLocaleTimeString(), type: 'info', msg: 'System Initialized. Awaiting Pico stream.' }
+    { id: 1, time: new Date().toLocaleTimeString(), type: 'info', msg: 'System initialized. Awaiting STM32 laptop bridge.' }
   ]);
 
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
@@ -306,7 +306,7 @@ export default function App() {
       setLastPacketAt(updatedAt || data.receivedAt || data.timestamp || new Date().toISOString());
       setHasTelemetry(true);
       setIsConnected(true);
-      setStreamMode('Pico live');
+      setStreamMode('Bridge live');
       return true;
     };
 
@@ -320,7 +320,7 @@ export default function App() {
           setIsConnected(false);
           setHasTelemetry(false);
           setLastPacketAt(null);
-          setStreamMode('Waiting for Pico');
+          setStreamMode('Waiting for bridge');
           return;
         }
 
@@ -328,7 +328,7 @@ export default function App() {
         if (Date.now() - updatedTime > STALE_AFTER_MS) {
           setIsConnected(false);
           setHasTelemetry(false);
-          setStreamMode('Pico stale');
+          setStreamMode('Bridge stale');
           return;
         }
 
@@ -353,7 +353,7 @@ export default function App() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       if (rearMotor.temp > 85 && alerts.length < 5) {
-        addAlert('warning', 'Rear motor temperature exceeding optimal bounds (85°C+)');
+        addAlert('warning', 'Rear motor temperature exceeding optimal bounds (85 deg C+)');
       }
       if (frontMotor.vibrationX > 3.0) {
         addAlert('critical', 'High vibration anomaly detected on Front Drive IMU');
@@ -366,8 +366,8 @@ export default function App() {
     setIsGeneratingReport(true);
     setAiReportContent(null);
     const prompt = `Analyze the current state of the dual-motor EV system.
-    Front Motor: ${frontMotor.rpm.toFixed(0)} RPM, ${frontMotor.temp.toFixed(1)}°C, Peak Vibration: ${frontMotor.vibrationX.toFixed(2)}g, Current: ${frontMotor.currentDraw.toFixed(1)}A
-    Rear Motor: ${rearMotor.rpm.toFixed(0)} RPM, ${rearMotor.temp.toFixed(1)}°C, Peak Vibration: ${rearMotor.vibrationX.toFixed(2)}g, Current: ${rearMotor.currentDraw.toFixed(1)}A
+    Front Motor: ${frontMotor.rpm.toFixed(0)} RPM, ${frontMotor.temp.toFixed(1)} deg C, Peak Vibration: ${frontMotor.vibrationX.toFixed(2)}g, Current: ${frontMotor.currentDraw.toFixed(1)}A
+    Rear Motor: ${rearMotor.rpm.toFixed(0)} RPM, ${rearMotor.temp.toFixed(1)} deg C, Peak Vibration: ${rearMotor.vibrationX.toFixed(2)}g, Current: ${rearMotor.currentDraw.toFixed(1)}A
     Torque Split: Front ${torqueSplit.front.toFixed(0)}% / Rear ${torqueSplit.rear.toFixed(0)}%
     Recent Alerts: ${alerts.map(a => a.msg).join(', ')}
 
@@ -388,7 +388,7 @@ export default function App() {
   const handleAnalyzeAlert = async (alert) => {
     setAiAnalysisState({ loading: true, alertId: alert.id, content: null });
     const prompt = `An alert occurred in our EV motor telemetry: "${alert.msg}".
-    Context: Front Motor Temp is ${frontMotor.temp.toFixed(1)}°C, Vibration is ${frontMotor.vibrationX.toFixed(2)}g. Rear Motor Temp is ${rearMotor.temp.toFixed(1)}°C, Vibration is ${rearMotor.vibrationX.toFixed(2)}g.
+    Context: Front Motor Temp is ${frontMotor.temp.toFixed(1)} deg C, Vibration is ${frontMotor.vibrationX.toFixed(2)}g. Rear Motor Temp is ${rearMotor.temp.toFixed(1)} deg C, Vibration is ${rearMotor.vibrationX.toFixed(2)}g.
 
     As an EV hardware specialist, explain in 2-3 short sentences what physical issues might be causing this in the BLDC motor or ESC hardware, and suggest an immediate hardware check.`;
 
@@ -478,7 +478,7 @@ export default function App() {
               title: `${title} Temperature`, 
               dataKey: `${motorId}Temp`, 
               color: data.temp > 80 ? '#f43f5e' : '#f97316',
-              unit: '°C' 
+              unit: 'deg C'
             })}
             className="bg-slate-950/50 p-4 rounded-lg border border-slate-800/50 cursor-pointer group hover:bg-slate-800/60 hover:border-slate-600 transition-all relative"
           >
@@ -487,9 +487,9 @@ export default function App() {
               <Thermometer className={`w-4 h-4 ${data.temp > 80 ? 'text-rose-500' : 'text-orange-400'}`} /> Temperature
             </div>
             <div className={`text-2xl font-mono ${data.temp > 80 ? 'text-rose-400' : 'text-white'}`}>
-              {data.temp.toFixed(1)} <span className="text-sm text-slate-500">°C</span>
+              {data.temp.toFixed(1)} <span className="text-sm text-slate-500">deg C</span>
             </div>
-            <ProgressBar value={data.temp} max={120} colorClass={data.temp > 80 ? 'bg-rose-500' : 'bg-orange-500'} label="Heat" unit="°C" />
+            <ProgressBar value={data.temp} max={120} colorClass={data.temp > 80 ? 'bg-rose-500' : 'bg-orange-500'} label="Heat" unit="deg C" />
           </div>
         </div>
 
@@ -569,13 +569,13 @@ export default function App() {
             <Cpu className="w-8 h-8 text-emerald-500" />
             EV Telemetry Hub
           </h1>
-          <p className="text-slate-400 mt-1">STM32 + Pi Pico Gateway • Dual BLDC ESC Monitor</p>
+          <p className="text-slate-400 mt-1">STM32 laptop bridge | Dual BLDC ESC Monitor</p>
         </div>
         
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-full text-sm font-medium">
             <Server className="w-4 h-4 text-slate-400" />
-            <span>Pico Gateway:</span>
+            <span>Laptop Bridge:</span>
             {isConnected ? (
               <span className="flex items-center gap-1 text-emerald-400"><CheckCircle2 className="w-4 h-4"/> LIVE</span>
             ) : (
@@ -593,7 +593,7 @@ export default function App() {
             ) : (
               <Sparkles className="w-4 h-4 text-indigo-200" />
             )}
-            {isGeneratingReport ? 'Analyzing...' : 'AI Diagnostics ✨'}
+            {isGeneratingReport ? 'Analyzing...' : 'AI Diagnostics'}
           </button>
         </div>
       </header>
@@ -609,7 +609,7 @@ export default function App() {
             <Card className="md:col-span-2 min-h-[520px] flex items-center justify-center text-center">
               <div>
                 <Server className="w-10 h-10 text-slate-500 mx-auto mb-4" />
-                <h2 className="text-xl font-bold text-white">Waiting for ESP32 telemetry</h2>
+                <h2 className="text-xl font-bold text-white">Waiting for STM32 telemetry</h2>
                 <p className="text-sm text-slate-400 mt-2">No motor values will be shown until the first packet reaches the API.</p>
               </div>
             </Card>
@@ -800,7 +800,7 @@ export default function App() {
                           onClick={() => handleAnalyzeAlert(alert)}
                           className="text-xs flex items-center gap-1 text-indigo-400 hover:text-indigo-300 transition-colors"
                         >
-                          <Sparkles className="w-3 h-3" /> Investigate Anomaly ✨
+                          <Sparkles className="w-3 h-3" /> Investigate Anomaly
                         </button>
                       )}
                     </div>
@@ -819,7 +819,7 @@ export default function App() {
             <div className="flex justify-between items-center p-4 border-b border-slate-800 bg-slate-800/50">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <FileText className="w-5 h-5 text-indigo-400" />
-                AI Diagnostic Report ✨
+                AI Diagnostic Report
               </h3>
               <button onClick={() => setAiReportContent(null)} className="text-slate-400 hover:text-white transition-colors">
                 <X className="w-5 h-5" />
