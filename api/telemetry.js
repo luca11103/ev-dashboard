@@ -11,6 +11,7 @@ const cacheFile = join(tmpdir(), 'ev-dashboard-latest-telemetry.json');
 const json = (response, status, body) => {
   response.statusCode = status;
   response.setHeader('Content-Type', 'application/json');
+  response.setHeader('Cache-Control', 'no-store');
   response.setHeader('Access-Control-Allow-Origin', '*');
   response.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   response.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-telemetry-key, x-pico-key');
