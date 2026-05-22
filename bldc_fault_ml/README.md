@@ -39,6 +39,32 @@ The run creates:
 
 Open `report.html` to see the graphs.
 
+## A2212 12 V Report Run
+
+This command creates a larger synthetic run constrained to the instrumented A2212 lab envelope in this project: 12 V input, battery current limited to 2 A, temperature from 30 C to 55 C, phase U/V/W back EMF, phase U/V/W current, vibration X/Y/Z, RPM, and battery measurements.
+
+```powershell
+cd bldc_fault_ml
+python train_fault_model.py --demo --profile a2212_12v_2a --windows-per-class 180 --export-demo-windows 0 --dashboard-export ..\public\ml-report
+```
+
+The output folder printed at the end contains:
+
+- `demo_dataset.csv`: all raw synthetic training windows when `--export-demo-windows 0` is used.
+- `window_features.csv`: extracted window features used by the models.
+- `metrics.json`: classifier and RUL metrics.
+- `feature_importance.csv`: ranked ML features.
+- `model.pkl`: trained model bundle used by the bridge.
+- `report.html`: report-ready HTML graphs.
+
+The dashboard export writes `public/ml-report/report.html` and `public/ml-report/latest.json`, so the current model report appears inside the deployed website after the frontend is rebuilt and redeployed.
+
+Export a run again later without retraining:
+
+```powershell
+python export_dashboard_report.py --run outputs\<run-id> --target ..\public\ml-report
+```
+
 ## Real Telemetry CSV Format
 
 Each row should be one raw sensor sample. For FFT, vibration must be sampled much faster than the dashboard polling rate; 200 Hz to 1000 Hz is a good starting range for ADXL data.
@@ -64,6 +90,7 @@ Supported demo fault classes:
 - `phase_loss`
 - `winding_short`
 - `back_emf_anomaly`
+- `demagnetization`
 
 Train on your own CSV:
 
@@ -79,4 +106,4 @@ python predict_fault.py --model outputs\<run-id>\model.pkl --csv data\latest_win
 
 ## Important
 
-The demo dataset is synthetic. It is useful for proving that the pipeline, signal processing, reports, and local model flow work. True accuracy needs labeled motor data from your BLDC setup across normal operation and known fault conditions.
+The demo dataset is synthetic. It is useful for proving that the pipeline, signal processing, reports, and local model flow work. It does not replace labeled A2212 measurements collected from normal operation and controlled fault experiments.

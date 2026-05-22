@@ -46,7 +46,7 @@ python tools/stm32_serial_bridge.py --port COM5 --baud 115200 --url https://your
 Run it with the bundled local ML model:
 
 ```powershell
-python tools/stm32_serial_bridge.py --port COM5 --baud 115200 --url https://your-site.vercel.app/api/telemetry --model bldc_fault_ml\outputs\20260516_111827\model.pkl --sample-rate 400
+python tools/stm32_serial_bridge.py --port COM5 --baud 115200 --url https://your-site.vercel.app/api/telemetry --model bldc_fault_ml\outputs\<run-id>\model.pkl --sample-rate 400
 ```
 
 ML scoring stays in `waiting_for_channels` until the UART stream contains the electrical, thermal, RPM, and vibration channels expected by the model. `--allow-partial-ml` exists for bring-up, but zero-filled phase or battery channels should not be treated as a validated maintenance prediction.
@@ -96,3 +96,23 @@ rpm,temp,inputVoltage,currentDraw,phaseU,phaseV,phaseW,vibrationX,vibrationY,vib
 You can override that with `--csv-fields`.
 
 For FFT and fault classification, send raw vibration samples at the sample rate passed to the bridge. A slow dashboard packet rate is fine; a slow raw sensor stream is not. See [SETUP_GUIDE.md](SETUP_GUIDE.md) for the firmware packet contract and the next production steps.
+
+## ML Report On The Website
+
+Train and export the A2212 synthetic report from the ML folder:
+
+```powershell
+cd bldc_fault_ml
+python train_fault_model.py --demo --profile a2212_12v_2a --windows-per-class 180 --export-demo-windows 0 --dashboard-export ..\public\ml-report
+```
+
+That run creates the full local report under `bldc_fault_ml\outputs\<run-id>\report.html` and exports the latest report assets under `public\ml-report` for Vite/Vercel.
+
+To publish an already-trained run again:
+
+```powershell
+cd bldc_fault_ml
+python export_dashboard_report.py --run outputs\<run-id> --target ..\public\ml-report
+```
+
+The live console keeps exported ML graphs under the header `ML` view. Its `Generated Reports` panel is separate: it saves telemetry snapshots when an explainable abnormality rule fires, such as high vibration with a speed rise, high temperature/current, phase spread, low RUL/health, or a confident non-normal live ML window.

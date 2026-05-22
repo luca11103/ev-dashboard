@@ -9,7 +9,11 @@ import numpy as np
 from .signal import bandpass_fft, fft_spectrum
 
 
-PALETTE = ["#2563eb", "#16a34a", "#dc2626", "#9333ea", "#ea580c", "#0891b2", "#be123c", "#4f46e5"]
+PALETTE = ["#22d3ee", "#34d399", "#f472b6", "#f59e0b", "#60a5fa", "#a3e635", "#fb7185", "#c084fc"]
+CHART_BG = "#08090b"
+GRID = "#27272a"
+AXIS = "#71717a"
+TEXT = "#d4d4d8"
 
 
 def _scale(values: np.ndarray, low: float, high: float) -> np.ndarray:
@@ -47,7 +51,7 @@ def _bar_chart(title: str, labels: list[str], values: np.ndarray, width: int = 7
     return (
         f'<h2>{html.escape(title)}</h2>'
         f'<svg viewBox="0 0 {width} {svg_h}" role="img">'
-        f'<rect width="{width}" height="{svg_h}" fill="#ffffff"/>'
+        f'<rect width="{width}" height="{svg_h}" fill="{CHART_BG}"/>'
         f'{"".join(rows)}'
         "</svg>"
     )
@@ -66,8 +70,8 @@ def _confusion_matrix(title: str, labels: list[str], matrix: np.ndarray) -> str:
         for j, pred in enumerate(labels):
             value = int(matrix[i, j])
             intensity = value / max_v
-            color = f"rgba(37, 99, 235, {0.12 + 0.82 * intensity:.3f})"
-            text_color = "#ffffff" if intensity > 0.45 else "#0f172a"
+            color = f"rgba(34, 211, 238, {0.10 + 0.82 * intensity:.3f})"
+            text_color = "#ecfeff" if intensity > 0.45 else TEXT
             x = left + j * size
             y = top + i * size
             cells.append(
@@ -80,7 +84,7 @@ def _confusion_matrix(title: str, labels: list[str], matrix: np.ndarray) -> str:
     return (
         f'<h2>{html.escape(title)}</h2>'
         f'<svg viewBox="0 0 {width} {height}" role="img">'
-        f'<rect width="{width}" height="{height}" fill="#ffffff"/>'
+        f'<rect width="{width}" height="{height}" fill="{CHART_BG}"/>'
         f'<text x="{left}" y="28" class="axis-title">Predicted fault type</text>'
         f'<text x="20" y="{top + len(labels) * size / 2}" transform="rotate(-90,20,{top + len(labels) * size / 2})" class="axis-title">Actual fault type</text>'
         f'{"".join(cells)}'
@@ -106,9 +110,9 @@ def _scatter(title: str, actual: np.ndarray, pred: np.ndarray, width: int = 760,
     return (
         f'<h2>{html.escape(title)}</h2>'
         f'<svg viewBox="0 0 {width} {height}" role="img">'
-        f'<rect width="{width}" height="{height}" fill="#ffffff"/>'
-        f'<line x1="{margin}" y1="{height - margin}" x2="{width - margin}" y2="{height - margin}" stroke="#64748b"/>'
-        f'<line x1="{margin}" y1="{margin}" x2="{margin}" y2="{height - margin}" stroke="#64748b"/>'
+        f'<rect width="{width}" height="{height}" fill="{CHART_BG}"/>'
+        f'<line x1="{margin}" y1="{height - margin}" x2="{width - margin}" y2="{height - margin}" stroke="{AXIS}"/>'
+        f'<line x1="{margin}" y1="{margin}" x2="{margin}" y2="{height - margin}" stroke="{AXIS}"/>'
         f'{line}{points}'
         f'<text x="{width / 2}" y="{height - 14}" text-anchor="middle">Actual RUL minutes</text>'
         f'<text x="18" y="{height / 2}" transform="rotate(-90,18,{height / 2})" text-anchor="middle">Predicted RUL minutes</text>'
@@ -128,10 +132,10 @@ def _line_chart(title: str, values: np.ndarray, sample_rate_hz: float, width: in
     return (
         f'<h2>{html.escape(title)}</h2>'
         f'<svg viewBox="0 0 {width} {height}" role="img">'
-        f'<rect width="{width}" height="{height}" fill="#ffffff"/>'
-        f'<line x1="52" y1="{height - 42}" x2="{width - 24}" y2="{height - 42}" stroke="#64748b"/>'
-        f'<line x1="52" y1="32" x2="52" y2="{height - 42}" stroke="#64748b"/>'
-        f'<polyline points="{_polyline(x, y)}" fill="none" stroke="#2563eb" stroke-width="2"/>'
+        f'<rect width="{width}" height="{height}" fill="{CHART_BG}"/>'
+        f'<line x1="52" y1="{height - 42}" x2="{width - 24}" y2="{height - 42}" stroke="{AXIS}"/>'
+        f'<line x1="52" y1="32" x2="52" y2="{height - 42}" stroke="{AXIS}"/>'
+        f'<polyline points="{_polyline(x, y)}" fill="none" stroke="#22d3ee" stroke-width="2.5"/>'
         f'<text x="{width / 2}" y="{height - 10}" text-anchor="middle">Time seconds</text>'
         f'<text x="15" y="{height / 2}" transform="rotate(-90,15,{height / 2})" text-anchor="middle">Vibration g</text>'
         "</svg>"
@@ -150,10 +154,10 @@ def _spectrum_chart(title: str, values: np.ndarray, sample_rate_hz: float, width
     return (
         f'<h2>{html.escape(title)}</h2>'
         f'<svg viewBox="0 0 {width} {height}" role="img">'
-        f'<rect width="{width}" height="{height}" fill="#ffffff"/>'
-        f'<line x1="52" y1="{height - 42}" x2="{width - 24}" y2="{height - 42}" stroke="#64748b"/>'
-        f'<line x1="52" y1="32" x2="52" y2="{height - 42}" stroke="#64748b"/>'
-        f'<polyline points="{_polyline(x, y)}" fill="none" stroke="#16a34a" stroke-width="2"/>'
+        f'<rect width="{width}" height="{height}" fill="{CHART_BG}"/>'
+        f'<line x1="52" y1="{height - 42}" x2="{width - 24}" y2="{height - 42}" stroke="{AXIS}"/>'
+        f'<line x1="52" y1="32" x2="52" y2="{height - 42}" stroke="{AXIS}"/>'
+        f'<polyline points="{_polyline(x, y)}" fill="none" stroke="#34d399" stroke-width="2.5"/>'
         f'<text x="{width / 2}" y="{height - 10}" text-anchor="middle">Frequency Hz</text>'
         f'<text x="15" y="{height / 2}" transform="rotate(-90,15,{height / 2})" text-anchor="middle">Amplitude</text>'
         "</svg>"
@@ -209,35 +213,35 @@ def write_html_report(
   <style>
     body {{
       margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      color: #0f172a;
-      background: #f8fafc;
+      font-family: Inter, "Segoe UI", Arial, Helvetica, sans-serif;
+      color: #d4d4d8;
+      background: #0b0d10;
       line-height: 1.45;
     }}
     header {{
-      background: #0f172a;
-      color: white;
-      padding: 28px 36px;
+      border-bottom: 1px solid #27272a;
+      background: #090b0e;
+      color: #fafafa;
+      padding: 28px 36px 24px;
     }}
     main {{
-      max-width: 1080px;
+      max-width: 1240px;
       margin: 0 auto;
       padding: 28px;
     }}
     section {{
-      background: white;
-      border: 1px solid #e2e8f0;
+      background: #090b0e;
+      border: 1px solid #27272a;
       border-radius: 8px;
       padding: 22px;
       margin: 0 0 20px;
-      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
     }}
     h1, h2 {{
       margin-top: 0;
     }}
     h2 {{
       font-size: 18px;
-      color: #1e293b;
+      color: #fafafa;
     }}
     svg {{
       max-width: 100%;
@@ -250,17 +254,17 @@ def write_html_report(
       margin-top: 8px;
     }}
     th, td {{
-      border-bottom: 1px solid #e2e8f0;
+      border-bottom: 1px solid #27272a;
       padding: 8px 10px;
       text-align: left;
     }}
     th {{
       width: 42%;
-      color: #475569;
+      color: #a1a1aa;
       font-weight: 700;
     }}
     code, pre {{
-      background: #f1f5f9;
+      background: #08090b;
       border-radius: 6px;
     }}
     pre {{
@@ -274,7 +278,10 @@ def write_html_report(
     }}
     .axis-title {{
       font-weight: 700;
-      fill: #334155;
+      fill: #e4e4e7;
+    }}
+    svg text {{
+      fill: {TEXT};
     }}
   </style>
 </head>

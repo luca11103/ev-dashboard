@@ -1,0 +1,396 @@
+{
+  "generatedAt": "2026-05-22T21:44:49",
+  "metadata": {
+    "source": "synthetic_a2212_12v_2a",
+    "windows": 1440,
+    "features": 245,
+    "sample_rate_hz": 400.0,
+    "window_seconds": 2.0,
+    "bandpass_hz": [
+      5.0,
+      180.0
+    ],
+    "fault_classes": [
+      "back_emf_anomaly",
+      "bearing_wear",
+      "demagnetization",
+      "misalignment",
+      "normal",
+      "phase_loss",
+      "rotor_imbalance",
+      "winding_short"
+    ],
+    "classifier_validation": {
+      "gaussian_nb": {
+        "accuracy": 0.9629629629629629,
+        "macro_f1": 0.9636347267663226
+      },
+      "knn": {
+        "accuracy": 0.9305555555555556,
+        "macro_f1": 0.9337949675186079
+      },
+      "bagged_trees": {
+        "accuracy": 1.0,
+        "macro_f1": 1.0
+      }
+    },
+    "classifier_weights": {
+      "gaussian_nb": 0.33179704003276916,
+      "knn": 0.3106167890985295,
+      "bagged_trees": 0.3575861708687013
+    },
+    "regressor_validation": {
+      "ridge_log_rul": {
+        "mae": 571.5531322515303,
+        "rmse": 1504.5482021216706,
+        "r2": 0.7062525498103587
+      },
+      "knn_log_rul": {
+        "mae": 552.6557799512052,
+        "rmse": 1408.1437269503094,
+        "r2": 0.7426904750494682
+      },
+      "bagged_tree_log_rul": {
+        "mae": 361.6478661929199,
+        "rmse": 1110.638895559085,
+        "r2": 0.8399308455044284
+      }
+    },
+    "regressor_weights": {
+      "ridge_log_rul": 0.2766552409006778,
+      "knn_log_rul": 0.2861151103939327,
+      "bagged_tree_log_rul": 0.4372296487053895
+    },
+    "note": "Synthetic demo metrics prove the pipeline; final accuracy requires real labeled BLDC data.",
+    "synthetic_profile": {
+      "title": "A2212 instrumented 12 V / 2 A test envelope",
+      "battery_voltage_v": "10.4-12.6 V synthetic bus samples",
+      "battery_current_a": "0.05-2.00 A source-limited samples",
+      "rpm": "1200-7200 RPM under the limited-current test envelope",
+      "temperature_c": "30-55 C",
+      "note": "Back EMF and signed phase-current waveforms assume calibrated per-phase sensing."
+    }
+  },
+  "classifierTest": {
+    "test_accuracy": 0.9675925925925926,
+    "test_macro_f1": 0.9674942937914637,
+    "mean_prediction_confidence": 0.9265522121388443,
+    "test_windows": 216
+  },
+  "regressorTest": {
+    "ensemble_log_rul": {
+      "mae": 437.56814323769004,
+      "rmse": 1204.736967790187,
+      "r2": 0.8188408031521219
+    }
+  },
+  "confusionMatrix": [
+    [
+      27,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      26,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      1,
+      0,
+      25,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      1,
+      0,
+      0,
+      26,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      27,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      27,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      27,
+      0
+    ],
+    [
+      0,
+      0,
+      2,
+      0,
+      0,
+      1,
+      0,
+      24
+    ]
+  ],
+  "topFeatures": [
+    {
+      "feature": "back_emf_rms_imbalance_ratio",
+      "importance": 0.0512250482
+    },
+    {
+      "feature": "rpm_std",
+      "importance": 0.0376766313
+    },
+    {
+      "feature": "phase_current_rms_imbalance_ratio",
+      "importance": 0.0353434233
+    },
+    {
+      "feature": "vibration_z_g_rms",
+      "importance": 0.0352419167
+    },
+    {
+      "feature": "back_emf_rms_spread",
+      "importance": 0.0321538184
+    },
+    {
+      "feature": "rpm_range",
+      "importance": 0.0268763233
+    },
+    {
+      "feature": "phase_current_rms_spread",
+      "importance": 0.0260221874
+    },
+    {
+      "feature": "vibration_x_g_std",
+      "importance": 0.0257540139
+    },
+    {
+      "feature": "vibration_x_g_peak",
+      "importance": 0.0220974221
+    },
+    {
+      "feature": "back_emf_uv_delta",
+      "importance": 0.0214430505
+    },
+    {
+      "feature": "vibration_x_g_bp_peak",
+      "importance": 0.0205558261
+    },
+    {
+      "feature": "vibration_x_g_shape_factor",
+      "importance": 0.0189611286
+    },
+    {
+      "feature": "vibration_mag_bp_rms",
+      "importance": 0.0171094014
+    },
+    {
+      "feature": "electrical_mechanical_stress",
+      "importance": 0.0168036625
+    },
+    {
+      "feature": "vibration_z_g_kurtosis",
+      "importance": 0.0161226018
+    },
+    {
+      "feature": "vibration_mag_bp_fft_dominant_amp",
+      "importance": 0.0160174979
+    },
+    {
+      "feature": "vibration_mag_bp_shape_factor",
+      "importance": 0.0155020016
+    },
+    {
+      "feature": "vibration_mag_bp_mean",
+      "importance": 0.0148779044
+    }
+  ],
+  "rulScatter": [
+    {
+      "actualMinutes": 199.24169594466105,
+      "predictedMinutes": 249.6341988683057,
+      "fault": "misalignment"
+    },
+    {
+      "actualMinutes": 9907.249570056614,
+      "predictedMinutes": 5495.614918843904,
+      "fault": "normal"
+    },
+    {
+      "actualMinutes": 100.17761066222882,
+      "predictedMinutes": 78.93676608814063,
+      "fault": "demagnetization"
+    },
+    {
+      "actualMinutes": 329.17924057110747,
+      "predictedMinutes": 537.8702880660022,
+      "fault": "back_emf_anomaly"
+    },
+    {
+      "actualMinutes": 7281.592739514632,
+      "predictedMinutes": 6175.6993781725505,
+      "fault": "normal"
+    },
+    {
+      "actualMinutes": 812.1401307499957,
+      "predictedMinutes": 648.4614206201479,
+      "fault": "misalignment"
+    },
+    {
+      "actualMinutes": 17.59158397410315,
+      "predictedMinutes": 16.57709029795015,
+      "fault": "winding_short"
+    },
+    {
+      "actualMinutes": 476.7126437263843,
+      "predictedMinutes": 510.16057138172886,
+      "fault": "bearing_wear"
+    },
+    {
+      "actualMinutes": 494.09705659385565,
+      "predictedMinutes": 551.6649062202383,
+      "fault": "rotor_imbalance"
+    },
+    {
+      "actualMinutes": 21.49679698112103,
+      "predictedMinutes": 27.61095754827395,
+      "fault": "phase_loss"
+    },
+    {
+      "actualMinutes": 120.44737029433095,
+      "predictedMinutes": 188.78274521962592,
+      "fault": "phase_loss"
+    },
+    {
+      "actualMinutes": 5.0,
+      "predictedMinutes": 13.056496930457552,
+      "fault": "winding_short"
+    },
+    {
+      "actualMinutes": 454.47745072589345,
+      "predictedMinutes": 431.11280040721647,
+      "fault": "bearing_wear"
+    },
+    {
+      "actualMinutes": 860.3687019358068,
+      "predictedMinutes": 715.9966852050877,
+      "fault": "misalignment"
+    },
+    {
+      "actualMinutes": 9564.830760751154,
+      "predictedMinutes": 5183.337883232362,
+      "fault": "normal"
+    },
+    {
+      "actualMinutes": 153.48313396370537,
+      "predictedMinutes": 329.3353216680703,
+      "fault": "phase_loss"
+    },
+    {
+      "actualMinutes": 45.43623748149527,
+      "predictedMinutes": 22.770445770204187,
+      "fault": "rotor_imbalance"
+    },
+    {
+      "actualMinutes": 6170.111714023056,
+      "predictedMinutes": 4938.523329830412,
+      "fault": "normal"
+    },
+    {
+      "actualMinutes": 5.0,
+      "predictedMinutes": 11.864403695080442,
+      "fault": "phase_loss"
+    },
+    {
+      "actualMinutes": 103.18926728035885,
+      "predictedMinutes": 321.11189560061337,
+      "fault": "demagnetization"
+    },
+    {
+      "actualMinutes": 54.340477483152924,
+      "predictedMinutes": 44.58097442574313,
+      "fault": "winding_short"
+    },
+    {
+      "actualMinutes": 124.04411181250569,
+      "predictedMinutes": 117.25993730125327,
+      "fault": "bearing_wear"
+    },
+    {
+      "actualMinutes": 256.34554818591334,
+      "predictedMinutes": 295.30508444958133,
+      "fault": "demagnetization"
+    },
+    {
+      "actualMinutes": 155.86079978909447,
+      "predictedMinutes": 118.34771323816274,
+      "fault": "demagnetization"
+    },
+    {
+      "actualMinutes": 8592.195485400705,
+      "predictedMinutes": 5512.2379282378515,
+      "fault": "normal"
+    },
+    {
+      "actualMinutes": 47.398001785912214,
+      "predictedMinutes": 32.628465777075085,
+      "fault": "demagnetization"
+    },
+    {
+      "actualMinutes": 18.908299296192673,
+      "predictedMinutes": 17.47267273794204,
+      "fault": "back_emf_anomaly"
+    },
+    {
+      "actualMinutes": 266.8221781213395,
+      "predictedMinutes": 274.80240160166227,
+      "fault": "back_emf_anomaly"
+    },
+    {
+      "actualMinutes": 305.19190972786134,
+      "predictedMinutes": 395.576914177273,
+      "fault": "back_emf_anomaly"
+    },
+    {
+      "actualMinutes": 52.59511952473924,
+      "predictedMinutes": 27.05711507074258,
+      "fault": "phase_loss"
+    }
+  ],
+  "reportHref": "/ml-report/report.html"
+}

@@ -27,3 +27,6 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# Generated local ML runs can include very large raw telemetry CSV exports.
+bldc_fault_ml/outputs

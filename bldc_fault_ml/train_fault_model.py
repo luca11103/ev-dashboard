@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import pickle
+import shutil
 from datetime import datetime
 from pathlib import Path
 
@@ -33,13 +34,25 @@ from bldc_fault_ml.models import (
     stratified_split,
 )
 from bldc_fault_ml.reporting import write_html_report
-from bldc_fault_ml.synthetic import FAULT_CLASSES, generate_synthetic_windows, write_raw_csv
+from bldc_fault_ml.synthetic import (
+    DEFAULT_SYNTHETIC_PROFILE,
+    FAULT_CLASSES,
+    SYNTHETIC_PROFILES,
+    generate_synthetic_windows,
+    write_raw_csv,
+)
 
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train BLDC fault classification and RUL models.")
     parser.add_argument("--csv", type=Path, help="Raw telemetry CSV with labels and RUL.")
     parser.add_argument("--demo", action="store_true", help="Use synthetic BLDC fault data.")
+    parser.add_argument(
+        "--profile",
+        choices=tuple(SYNTHETIC_PROFILES),
+        default=DEFAULT_SYNTHETIC_PROFILE,
+        help="Synthetic profile used with --demo.",
+    )
     parser.add_argument("--sample-rate", type=float, default=400.0, help="ADXL sample rate in Hz.")
     parser.add_argument("--window-seconds", type=float, default=2.0, help="Feature window length in seconds.")
     parser.add_argument("--bandpass-low", type=float, default=5.0, help="Vibration band-pass low cutoff in Hz.")
@@ -51,7 +64,12 @@ def _parse_args() -> argparse.Namespace:
         "--export-demo-windows",
         type=int,
         default=28,
-        help="How many synthetic raw windows to export to demo_dataset.csv.",
+        help="How many synthetic raw windows to export to demo_dataset.csv. Use 0 to export all windows.",
+    )
+    parser.add_argument(
+        "--dashboard-export",
+        type=Path,
+        help="Optional public folder for report.html and latest.json used by the web dashboard.",
     )
     return parser.parse_args()
 
@@ -101,6 +119,46 @@ def _class_counts(labels: list[str], class_labels: list[str]) -> np.ndarray:
     return np.asarray([sum(1 for label in labels if label == cls) for cls in class_labels], dtype=float)
 
 
+def _export_dashboard_report(
+    target: Path,
+    out_dir: Path,
+    metrics: dict[str, object],
+    class_labels: list[str],
+    class_counts: np.ndarray,
+    feature_names: list[str],
+    feature_importance: np.ndarray,
+) -> None:
+    target = target.resolve()
+    target.mkdir(parents=True, exist_ok=True)
+    top_idx = np.argsort(feature_importance)[::-1][:18]
+    summary = {
+        "generatedAt": datetime.now().isoformat(timespec="seconds"),
+        "metadata": metrics["metadata"],
+        "classifierTest": metrics["classifier_test"],
+        "regressorTest": metrics["regressor_test"],
+        "confusionMatrix": metrics["confusion_matrix"],
+        "classDistribution": [
+            {"label": label, "windows": int(class_counts[index])}
+            for index, label in enumerate(class_labels)
+        ],
+        "topFeatures": [
+            {"feature": feature_names[int(index)], "importance": float(feature_importance[int(index)])}
+            for index in top_idx
+        ],
+        "rulScatter": [
+            {
+                "actualMinutes": item["actual_rul_minutes"],
+                "predictedMinutes": item["predicted_rul_minutes"],
+                "fault": item["actual_fault"],
+            }
+            for item in metrics["test_predictions"]
+        ],
+        "reportHref": "/ml-report/report.html",
+    }
+    (target / "latest.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    shutil.copyfile(out_dir / "report.html", target / "report.html")
+
+
 def main() -> None:
     args = _parse_args()
     if not args.csv and not args.demo:
@@ -117,6 +175,7 @@ def main() -> None:
             sample_rate_hz=args.sample_rate,
             window_seconds=args.window_seconds,
             seed=args.seed,
+            profile=args.profile,
         )
         write_raw_csv(
             out_dir / "demo_dataset.csv",
@@ -124,9 +183,9 @@ def main() -> None:
             labels,
             rul_minutes,
             groups,
-            max_windows=args.export_demo_windows,
+            max_windows=None if args.export_demo_windows <= 0 else args.export_demo_windows,
         )
-        source = "synthetic_demo"
+        source = f"synthetic_{args.profile}"
     else:
         if not args.csv:
             raise ValueError("Pass --csv or use --demo")
@@ -250,6 +309,8 @@ def main() -> None:
         "regressor_weights": regressor_weights,
         "note": "Synthetic demo metrics prove the pipeline; final accuracy requires real labeled BLDC data.",
     }
+    if args.demo:
+        metadata["synthetic_profile"] = SYNTHETIC_PROFILES[args.profile]
 
     metrics = {
         "metadata": metadata,
@@ -307,6 +368,16 @@ def main() -> None:
         bandpass_high_hz=args.bandpass_high,
         metadata=metadata,
     )
+    if args.dashboard_export:
+        _export_dashboard_report(
+            args.dashboard_export,
+            out_dir,
+            metrics,
+            encoder.classes_,
+            _class_counts(labels, encoder.classes_),
+            frame.feature_names,
+            feature_importance,
+        )
 
     print()
     print("Training complete.")
@@ -314,6 +385,8 @@ def main() -> None:
     print(f"Fault classifier accuracy: {classifier_metrics['test_accuracy']:.3f}")
     print(f"Fault classifier macro F1: {classifier_metrics['test_macro_f1']:.3f}")
     print(f"RUL MAE minutes: {regressor_test_metrics['ensemble_log_rul']['mae']:.2f}")
+    if args.dashboard_export:
+        print(f"Dashboard report export: {args.dashboard_export}")
     print("Top features:")
     for idx in np.argsort(feature_importance)[::-1][:10]:
         print(f"  {frame.feature_names[idx]}: {feature_importance[idx]:.4f}")

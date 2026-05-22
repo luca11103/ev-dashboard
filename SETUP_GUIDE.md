@@ -74,7 +74,7 @@ python tools/stm32_serial_bridge.py --port COM5 --baud 115200 --url https://your
 Live model path:
 
 ```powershell
-python tools/stm32_serial_bridge.py --port COM5 --baud 115200 --url https://your-site.vercel.app/api/telemetry --model bldc_fault_ml\outputs\20260516_111827\model.pkl --sample-rate 400
+python tools/stm32_serial_bridge.py --port COM5 --baud 115200 --url https://your-site.vercel.app/api/telemetry --model bldc_fault_ml\outputs\<run-id>\model.pkl --sample-rate 400
 ```
 
 The dashboard receives these ML fields when a complete feature window is available:
@@ -100,6 +100,8 @@ The dashboard receives these ML fields when a complete feature window is availab
   }
 }
 ```
+
+The dashboard also keeps local abnormal snapshot reports. A report stores the motor values, phase values, ML state, FFT summary, trigger labels, and a short reason whenever a rule crosses a report threshold. These generated reports are intended as traceable condition-monitoring snapshots; the thresholds should be tuned after a healthy A2212 baseline is collected.
 
 ## STM32 Notes For The Shared Code
 
