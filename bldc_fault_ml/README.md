@@ -6,7 +6,7 @@ It uses:
 
 - ADXL vibration time-domain features: RMS, crest factor, kurtosis, skew, peak-to-peak, slopes.
 - ADXL frequency-domain features: FFT, configurable band-pass filtering, band power, spectral centroid, dominant frequency, harmonic energy.
-- Electrical features: battery voltage/current, phase U/V/W currents, phase U/V/W back EMF, phase imbalance, power proxy.
+- Electrical features: battery voltage/current, phase U/V/W currents, phase U/V/W back EMF, phase imbalance, power proxy. is
 - Thermal and speed features: motor temperature, RPM trends and variability.
 - Multiple local models:
   - Gaussian Naive Bayes classifier.
